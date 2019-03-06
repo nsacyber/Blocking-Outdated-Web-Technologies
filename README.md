@@ -27,4 +27,4 @@ For ease of testing, use the PowerShell script. The script probes various websit
 ## Quick Links:
 * [Rules](https://github.com/nsacyber/OutdatedBrowserRules/rules.txt)
 * [Testing Script](https://github.com/nsacyber/OutdatedBrowserRules/testBrowserBlocking.ps1)
-* [Security Configuration Guide for Browser Updates] (https://apps.nsa.gov/iaarchive/library/ia-guidance/security-configuration/applications/security-configuration-guide-for-browser-updates.cfm)
+* [Security Configuration Guide for Browser Updates](https://apps.nsa.gov/iaarchive/library/ia-guidance/security-configuration/applications/security-configuration-guide-for-browser-updates.cfm)
