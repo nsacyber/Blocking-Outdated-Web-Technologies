@@ -30,6 +30,6 @@ Testing should be performed after signatures are enabled in "blocking" mode. The
 Note that the testing script corresponds to a browser blocking rule set. Ensure that the testing script and the browser blocking ruleset are for the same year and quarter. The current blocking strategy is to block browsers that are more than 2 years outdated. Organizations can update the rules and testing script to block browsers less outdated to enhance their defensive posture. 
 
 ## Quick Links:
-* [Rules](https://github.com/nsacyber/OutdatedBrowserRules/rules.txt)
-* [Testing Script](https://github.com/nsacyber/OutdatedBrowserRules/testBrowserBlocking.ps1)
+* [Rules](https://github.com/nsacyber/Blocking-Outdated-Web-Technologies/RULES_browser_blocking_2019Q2.txt)
+* [Testing Script](https://github.com/nsacyber/Blocking-Outdated-Web-Technologies/TESTING_SCRIPT_browser_blocking_2019Q2.ps1)
 * [Security Configuration Guide for Browser Updates] (https://apps.nsa.gov/iaarchive/library/ia-guidance/security-configuration/applications/security-configuration-guide-for-browser-updates.cfm)
