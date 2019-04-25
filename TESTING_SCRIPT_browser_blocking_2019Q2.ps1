@@ -14,118 +14,114 @@ $outfile = ".\BrowserBlockingResults-" + (Get-Date -Format "yyyyMMdd-hhmm") + ".
 #Time to wait between requests. This is used in an over-abundance of caution to ensure that the script does not create a significant traffic bottleneck for target websites
 $delay = 0.5 #seconds between each test
 
-# Used for debugging to force script to end early
-$totalTries = 1000
-
 #Helper function to handle putting data both to the file and to the screen
-function out ([string] $str) {
+function out ([string] $str, $display = $true) {
   Out-File -FilePath $outfile -Append -InputObject $str
-  echo $str
+  if($display){ echo $str }
 }
 
+#Helper function to sum an array. Used for reporting statistics
+function Get-Sum ($a, $b=@{}) {
+    return (($a.Values | Measure-Object -Sum).Sum + ($b.Values | Measure-Object -Sum).Sum)
+}
 
 # testUserAgents Function will test each of the user agent strings from the array below. Function call is at the end of this script
 function testUserAgents  {
     out "This script will test $($agents.Count) browser versions. `nYou will see a summary when the script completes."
-    out "To prevent a denial of service to the target website, a short delay is introduced between tests. Because of this, the script is expected to take approximately $([int]($agents.Count * $delay * 2 / 60)) minutes to complete."
+    out "To prevent creating a network bottleneck for the target website, a short delay is introduced between tests. Because of this, the script is expected to take approximately $([int]($agents.Count * $delay * 2 / 60)) minutes to complete."
     out "Testing in progress (You can lock your screen, but don't close this window!)...`n "
 	
 	#First we set up some variables to record statistics about the attempts we make
-    $Successes = 0
     $blocked_websites = @{}
     $accessed_websites = @{}
-    $BrowserTypes = @("Chrom", "Edge", "Firefox", "Internet Explorer", "Opera", "Safari", "Other", "Error")
+    $BrowserTypes = @("Chrom", "Edge", "Firefox", "Internet Explorer", "Opera", "Safari", "Other")
     $BrowserPermittedProperly = @{}
     $BrowserPermittedImproperly = @{}
     $BrowserRestrictedProperly = @{}
     $BrowserRestrictedImproperly = @{}
-    $BrowsersPermitted = 0
-    $BrowsersBlocked = 0
+    $BrowserBehaviorUnknown = @{}
     foreach($browser in $BrowserTypes) {  
       $BrowserPermittedProperly[$browser] = 0
       $BrowserPermittedImproperly[$browser] = 0
       $BrowserRestrictedProperly[$browser] = 0
       $BrowserRestrictedImproperly[$browser] = 0
+      $BrowserBehaviorUnknown[$browser] = 0
     }
 	
 	#Next we indicate a random place in the list of test URLs to begin testing
     $site = Get-Random -Minimum 0 -Maximum ($testURLs.Count - 1)  # start randomly in list and try different site every time
 	
 	#Finally we loop over all of the user-agents that we want to test and try websites until we either are allowed through or blocked (usually this occurs on the first website tried)
-    for ($agent=0; $agent -lt ($agents.Count) -and $agent -lt $totalTries; $agent++) {
+    for ($agent=0; $agent -lt ($agents.Count); $agent++) {
         $data = $agents[$agent]
-        $keep_trying = $true #try URLs until we find one that works (otherwise give up)
         $Response = $null
-        $blocked = $null
-        $ex = $null
-        for($i=0; $i -lt ($testURLs.Count) -AND $keep_trying; $i++) {
+        $response_received = $false #we will try URLs until we find one that works (otherwise give up)
+		#$testWasErroneous = $false
+        for($i=0; $i -lt ($testURLs.Count) -AND $response_received -eq $false; $i++) {
+			#$testWasErroneous = $false
             $testURL = $testURLs[(($site++) % $testURLs.Count)]
             $Response = $null
-            $ex = $null
             try {
                 $Response = Invoke-WebRequest "$($TestURL)?time=$([int][double]::Parse((Get-Date -UFormat %s)))"  -Method 'GET' -UserAgent $data[2] -TimeoutSec 10
             } catch {
-              if($_.ErrorDetails.Message -like "*BLOCKED*") { $blocked = $true; $ex = $_; $keep_trying = $false }
-              elseif($_.Exception.Status -like "*Timeout*") { $ex = $_ }
-              else {
-                #out $_.Exception | format-list -force
-                out ("Received Exception trying browser $($data[1]) accessing URL " + $testURL + ": ")
-                out ("   " + $_.Exception.Status + ": " + $_.Exception.Message)
-                $ex = $_
-              }
+				#$testWasErroneous = $true
+				#There are a few cases which would cause an error. We may eventually handle these differently, but for now, we'll just log the error and keep trying
+				if($_.ErrorDetails.Message -like "*BLOCKED*") { out ("   " + $_.Exception.Status + ": " + $_.Exception.Message) }
+				elseif($_.Exception.Status -like "*Timeout*") { out ("   " + $_.Exception.Status + ": " + $_.Exception.Message) }
+				else {out ("   " + $_.Exception.Status + ": " + $_.Exception.Message) }
             }
-            if($Response.content.length -gt 0) { $blocked = $false; $keep_trying = $false }
+            if($Response.content.length -gt 0) { $response_received = $true }
             Start-Sleep -s $delay #slow down
         }
-        if($blocked -eq $true) { $blocked_websites[$testURL] = $true }
-        else { $accessed_websites[$testURL] = $true } #$blocked -eq $false
 
-		#if keep_trying is true, then we've gone through the entire list of URLs and were unable to communicate with any of them. Check internet connectivity if this occurs
-        if($keep_trying -eq $true) {
+		#if keep_trying is true, then we've gone through the entire list of URLs and were unable to communicate with any of them. Check Internet connectivity if this occurs
+        if($response_received -eq $false) {
             out "$($agent+1)/$($agents.Count) Error: Internet connectivity problem. Script could not test $($data[1])"
-            $BrowserRestrictedImproperly["Error"]++
-            $BrowsersBlocked++
+            $BrowserBehaviorUnknown[$browser]++
             continue
         }
 		
 		#categorize the browser being tested and log the test results
         $browser = "Other"
         foreach($browserType in $BrowserTypes) { 
-          if($data[1] -imatch $BrowserType) { $browser = $browserType }
+            if($data[1] -imatch $BrowserType) { $browser = $browserType }
         }
-        If (($blocked -eq $true -or $Response.content -like $BlockedString) -AND $data[0] -eq "permitted") {
-            out "$($agent+1)/$($agents.Count) Error: The following browser version was expected to be permitted, but it was blocked:  $($data[1])" 
-            out ("  Tried browser " + $data[1] + " accessing URL $testURL and it was blocked: " + ($ex.ErrorDetails.Message -split '\r')[1].Trim())
+		#If($testWasErroneous) {
+		#	#We don't count these as properly or improperly handled since we cannot determine if the rule was matched or not
+        #    $BrowserBehaviorUnknown[$browser]++
+		#}
+        If ($data[0] -eq "permitted" -AND $Response.content -like $BlockedString) {
+            out "$($agent+1)/$($agents.Count) Error: The following browser version was expected to be permitted, but it was blocked:  $($data[1])"
             $BrowserRestrictedImproperly[$browser]++
+			$blocked_websites[$testURL] = $true
         }
-        ElseIf ($blocked -eq $false -AND $data[0] -eq "restricted") {
-            out "$($agent+1)/$($agents.Count) Error: The following browser version was expected to be blocked, but it was permitted:  $($data[1])" 
-            out ("  Tried browser " + $data[1] + " accessing URL $testURL and it was permitted.  Response: '" + (($Response.RawContent -Split '\r')[0]) + "', ContentLength: " + $Response.RawContentLength)
+        ElseIf ($data[0] -eq "restricted" -AND -not($Response.content -like $BlockedString)) {
+            out "$($agent+1)/$($agents.Count) Error: The following browser version was expected to be blocked, but it was permitted:  $($data[1])"
             $BrowserPermittedImproperly[$browser]++
+			$accessed_websites[$testURL] = $true
         } 
         Else { 
-            out "$($agent+1)/$($agents.Count) Successfully tried browser $($data[1]) accessing URL $testURL and it was $($data[0]) as expected."
-            $Successes++ 
-            if($blocked -eq $true) { $BrowserRestrictedProperly[$browser]++ }
-            else { $BrowserPermittedProperly[$browser]++ }
+            out "$($agent+1)/$($agents.Count) Successfully tried browser $($data[1]) accessing URL $testURL and it was $($data[0]) as expected." $false
+            if($Response.content -like $BlockedString) { $BrowserRestrictedProperly[$browser]++; $blocked_websites[$testURL] = $true }
+            else { $BrowserPermittedProperly[$browser]++; $accessed_websites[$testURL] = $true }
         }  
-        if($blocked -eq $true) { $BrowsersBlocked++ } else { $BrowsersPermitted++ }
+		
     }
 	
 	#All user-agents have been tested
     out "`nScript completed"
 	
     # Output summary stats
-    out " $($Successes) browser versions were handled correctly."
-    If ($Successes -lt ($agents.Count)) {
-	    out " $(($agents.Count) - $Successes) browser versions were not handled correctly. These versions are listed above."
-    }
-    out " $($BrowsersBlocked) browser tests were blocked in total."
-    out " $($BrowsersPermitted) browser tests were permitted in total."
+    out " $(Get-Sum $BrowserPermittedProperly $BrowserRestrictedProperly) browser versions were handled correctly."
+	out " $(($agents.Count) - (Get-Sum $BrowserPermittedProperly $BrowserRestrictedProperly) - (Get-Sum $BrowserBehaviorUnknown)) browser versions were not handled correctly. These versions are listed above." #Use subtraction here because network errors could cause strings to not be listed as properly or improperly handled
+    out " $(Get-Sum $BrowserBehaviorUnknown) browser tests had inconclusive results due to network issues."
+
+    out " $(Get-Sum $BrowserRestrictedImproperly $BrowserRestrictedProperly ) browser tests were blocked in total."
+    out " $(Get-Sum $BrowserPermittedImproperly $BrowserPermittedProperly ) browser tests were permitted in total."
     foreach($BrowserType in $BrowserTypes) {
       $browser = $BrowserType
       if($BrowserType -eq "Chrom") { $browser = "Chrome" }
-      out "  For $($browser): $($BrowserPermittedProperly[$BrowserType]) allowed properly, $($BrowserRestrictedProperly[$BrowserType]) blocked properly, $($BrowserPermittedImproperly[$BrowserType]) incorrectly allowed, $($BrowserRestrictedImproperly[$BrowserType]) incorrectly blocked." 
+      out "  For $($browser): $($BrowserPermittedProperly[$BrowserType]) allowed properly, $($BrowserRestrictedProperly[$BrowserType]) blocked properly, $($BrowserPermittedImproperly[$BrowserType]) incorrectly allowed, $($BrowserRestrictedImproperly[$BrowserType]) incorrectly blocked, $($BrowserBehaviorUnknown[$BrowserType]) network error encountered." 
     }
 	
     # Look for possible websites that have a complete exception to the outdated browsers rules or overriding block
