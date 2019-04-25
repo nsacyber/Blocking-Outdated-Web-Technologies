@@ -4,43 +4,34 @@
 # older web browsers.  This script saves a .out.txt file with its output log in the current
 # directory.
 
+
+#This is a substring of the response from the network appliance when an outdated browser is blocked
+$BlockedString= "*blocked website*" 
+
+#Filename where output will be written
 $outfile = ".\BrowserBlockingResults-" + (Get-Date -Format "yyyyMMdd-hhmm") + ".out.txt"
+
+#Time to wait between requests. This is used in an over-abundance of caution to ensure that the script does not create a significant traffic bottleneck for target websites
+$delay = 0.5 #seconds between each test
 
 # Used for debugging to force script to end early
 $totalTries = 1000
 
-# See if we're in the right process to run due to Firewall Process Outbound Connection Whitelisting 
-if((Get-Process -PID $PID).ProcessName -inotlike "*rssensor*") {
-  # Not running in rssensor process
-  if((Test-Path "C:\Tools\PowerShell\rssensor.exe") -eq $false) {
-    # Copy PowerShell over and rename it
-    echo "Copying PowerShell..."
-    Copy-Item -Path C:\Windows\System32\WindowsPowerShell\v1.0 -Destination C:\Tools\PowerShell -Force -Recurse
-    Copy-Item -Path C:\Tools\PowerShell\powershell.exe -Destination C:\Tools\PowerShell\rssensor.exe -Force
-    Copy-Item -Path C:\Tools\PowerShell\en-US\powershell.exe.mui -Destination C:\Tools\PowerShell\en-US\rssensor.exe.mui -Force
-  }
-  #re-run this script in the rsensor process
-  echo "Starting PowerShell with new process name..."
-  Start-Process "C:\Tools\PowerShell\rssensor.exe" -ArgumentList "-ExecutionPolicy Bypass -File $PSCOMMANDPATH" -Wait -NoNewWindow
-  Return
-}
-
+#Helper function to handle putting data both to the file and to the screen
 function out ([string] $str) {
   Out-File -FilePath $outfile -Append -InputObject $str
   echo $str
 }
 
-$delay = 0.5 #seconds between each test
-$BlockedString= "*blocked website*" 
 
 # testUserAgents Function will test each of the user agent strings from the array below. Function call is at the end of this script
 function testUserAgents  {
-
-    #Clear-Host #simply clears data from the console
-    $Successes = 0
     out "This script will test $($agents.Count) browser versions. `nYou will see a summary when the script completes."
     out "To prevent a denial of service to the target website, a short delay is introduced between tests. Because of this, the script is expected to take approximately $([int]($agents.Count * $delay * 2 / 60)) minutes to complete."
     out "Testing in progress (You can lock your screen, but don't close this window!)...`n "
+	
+	#First we set up some variables to record statistics about the attempts we make
+    $Successes = 0
     $blocked_websites = @{}
     $accessed_websites = @{}
     $BrowserTypes = @("Chrom", "Edge", "Firefox", "Internet Explorer", "Opera", "Safari", "Other", "Error")
@@ -56,7 +47,11 @@ function testUserAgents  {
       $BrowserRestrictedProperly[$browser] = 0
       $BrowserRestrictedImproperly[$browser] = 0
     }
+	
+	#Next we indicate a random place in the list of test URLs to begin testing
     $site = Get-Random -Minimum 0 -Maximum ($testURLs.Count - 1)  # start randomly in list and try different site every time
+	
+	#Finally we loop over all of the user-agents that we want to test and try websites until we either are allowed through or blocked (usually this occurs on the first website tried)
     for ($agent=0; $agent -lt ($agents.Count) -and $agent -lt $totalTries; $agent++) {
         $data = $agents[$agent]
         $keep_trying = $true #try URLs until we find one that works (otherwise give up)
@@ -83,14 +78,17 @@ function testUserAgents  {
             Start-Sleep -s $delay #slow down
         }
         if($blocked -eq $true) { $blocked_websites[$testURL] = $true }
-        elseif($blocked -eq $false) { $accessed_websites[$testURL] = $true }
-        else { }
+        else { $accessed_websites[$testURL] = $true } #$blocked -eq $false
+
+		#if keep_trying is true, then we've gone through the entire list of URLs and were unable to communicate with any of them. Check internet connectivity if this occurs
         if($keep_trying -eq $true) {
             out "$($agent+1)/$($agents.Count) Error: Internet connectivity problem. Script could not test $($data[1])"
             $BrowserRestrictedImproperly["Error"]++
             $BrowsersBlocked++
             continue
         }
+		
+		#categorize the browser being tested and log the test results
         $browser = "Other"
         foreach($browserType in $BrowserTypes) { 
           if($data[1] -imatch $BrowserType) { $browser = $browserType }
@@ -113,7 +111,10 @@ function testUserAgents  {
         }  
         if($blocked -eq $true) { $BrowsersBlocked++ } else { $BrowsersPermitted++ }
     }
+	
+	#All user-agents have been tested
     out "`nScript completed"
+	
     # Output summary stats
     out " $($Successes) browser versions were handled correctly."
     If ($Successes -lt ($agents.Count)) {
@@ -126,6 +127,7 @@ function testUserAgents  {
       if($BrowserType -eq "Chrom") { $browser = "Chrome" }
       out "  For $($browser): $($BrowserPermittedProperly[$BrowserType]) allowed properly, $($BrowserRestrictedProperly[$BrowserType]) blocked properly, $($BrowserPermittedImproperly[$BrowserType]) incorrectly allowed, $($BrowserRestrictedImproperly[$BrowserType]) incorrectly blocked." 
     }
+	
     # Look for possible websites that have a complete exception to the outdated browsers rules or overriding block
     foreach ($url in $testURLs) {
       if($blocked_websites.ContainsKey($url) -and $accessed_websites.ContainsKey($url)) {}
@@ -141,7 +143,7 @@ function testUserAgents  {
 }
 
 #This list of user agents was obtained from https://developers.whatismybrowser.com 
-#It represents the most common ~350 user agent strings that are encountered online. Additional work was performed to identify which of these user agents would be blocked
+#It represents the most common ~350 user agent strings that are encountered online. Additional work was performed to identify which of these user agents should be blocked
 $agents = @( 
 ("permitted","Android Browser 4","Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; Huawei-U8665 Build/HuaweiU8665B037) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1","Android","Average"),
 ("permitted","Android Browser 4.1","Mozilla/5.0 (Linux; U; Android 4.1.2; en-us; ALCATEL ONE TOUCH 5020N Build/JZO54K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.1 Mobile Safari/534.30","Android","Average"),

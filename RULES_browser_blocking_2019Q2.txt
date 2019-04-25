@@ -11,7 +11,9 @@
   <pattern>User\-Agent:(.*) Trident\/[3-6]\.</pattern>
 </entry>
 <entry name="Outdated_Safari">
-  <pattern>User\-Agent:(.*)Version\/(([0-9])|10)(\.([\.0-9])*) Safari\/</pattern>
+  <pattern>User\-Agent:(.*)Version\/([0-8])(\.([0-9])|([0-9][0-9])) Safari\/</pattern>
+  <pattern>User\-Agent:(.*)Version\/([0-8])(\.([0-9])|([0-9][0-9]))(\.([0-9])|([0-9][0-9])) Safari\/</pattern>
+  <pattern>User\-Agent:(.*)Version\/([0-8])(\.([0-9])|([0-9][0-9]))(\.([0-9])|([0-9][0-9]))(\.([0-9])|([0-9][0-9])) Safari\/</pattern>
 </entry>
 <entry name="Outdated_Opera">
   <pattern>User\-Agent:(.*) Opera\/9\.(.*) Version\/1([0-2])\.</pattern>
