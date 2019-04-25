@@ -56,15 +56,12 @@ function testUserAgents  {
         $data = $agents[$agent]
         $Response = $null
         $response_received = $false #we will try URLs until we find one that works (otherwise give up)
-		#$testWasErroneous = $false
         for($i=0; $i -lt ($testURLs.Count) -AND $response_received -eq $false; $i++) {
-			#$testWasErroneous = $false
             $testURL = $testURLs[(($site++) % $testURLs.Count)]
             $Response = $null
             try {
                 $Response = Invoke-WebRequest "$($TestURL)?time=$([int][double]::Parse((Get-Date -UFormat %s)))"  -Method 'GET' -UserAgent $data[2] -TimeoutSec 10
             } catch {
-				#$testWasErroneous = $true
 				#There are a few cases which would cause an error. We may eventually handle these differently, but for now, we'll just log the error and keep trying
 				if($_.ErrorDetails.Message -like "*BLOCKED*") { out ("   " + $_.Exception.Status + ": " + $_.Exception.Message) }
 				elseif($_.Exception.Status -like "*Timeout*") { out ("   " + $_.Exception.Status + ": " + $_.Exception.Message) }
@@ -86,10 +83,6 @@ function testUserAgents  {
         foreach($browserType in $BrowserTypes) { 
             if($data[1] -imatch $BrowserType) { $browser = $browserType }
         }
-		#If($testWasErroneous) {
-		#	#We don't count these as properly or improperly handled since we cannot determine if the rule was matched or not
-        #    $BrowserBehaviorUnknown[$browser]++
-		#}
         If ($data[0] -eq "permitted" -AND $Response.content -like $BlockedString) {
             out "$($agent+1)/$($agents.Count) Error: The following browser version was expected to be permitted, but it was blocked:  $($data[1])"
             $BrowserRestrictedImproperly[$browser]++
