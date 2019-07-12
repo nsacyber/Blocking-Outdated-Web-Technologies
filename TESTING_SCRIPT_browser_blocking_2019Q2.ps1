@@ -312,7 +312,7 @@ $agents = @(
 ("permitted","Internet Explorer 11","Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; MAARJS; rv:11.0) like Gecko","Windows","Average"),
 ("permitted","Internet Explorer 11","Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; .NET4.0C; .NET4.0E)","Windows","Average"),
 ("restricted","Internet Explorer 10","Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/7.0)","Windows","Average"),
-("restricted","Internet Explorer 6","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727; .NET CLR 1.1.4322)","Windows","Average"),
+("permitted","Internet Explorer 6","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727; .NET CLR 1.1.4322)","Windows","Average"),
 ("permitted","Internet Explorer 7 (allowed for now for compatibility)","Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)","Windows","Average"),
 ("restricted","Internet Explorer 8","Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; eSobiSubscriber 2.0.4.16; MAAR; .NET4.0C; McAfee; BRI/2; BOIE9;ENUS)","Windows","Average"),
 ("restricted","Internet Explorer 8","Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C; InfoPath.3; MS-RTC LM 8; .NET4.0E)","Windows","Average"),

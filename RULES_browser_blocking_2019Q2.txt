@@ -7,7 +7,7 @@
   <pattern>User\-Agent:(.*) Firefox\/(([1-9])|(([1-4][0-9]))|(5[0-1]))\.</pattern>
 </entry>
 <entry name="Outdated_InternetExplorer">
-  <pattern>User\-Agent:(.*) MSIE (([4-6])|([8-9])|10)\.</pattern>
+  <pattern>User\-Agent:(.*) MSIE (([4-5])|([8-9])|10)\.</pattern>
   <pattern>User\-Agent:(.*) Trident\/[3-6]\.</pattern>
 </entry>
 <entry name="Outdated_Opera">
