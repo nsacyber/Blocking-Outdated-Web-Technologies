@@ -29,7 +29,7 @@ Testing should be performed after signatures are enabled in "blocking" mode. The
 
 Note that the testing script corresponds to a browser blocking rule set. Ensure that the testing script and the browser blocking ruleset are for the same year and quarter. The current blocking strategy is to block browsers that are more than 2 years outdated. Organizations can update the rules and testing script to block browsers less outdated to enhance their defensive posture. 
 
-##Change Log
+## Change Log
 2019-07-12: Updated signatures to ignore false positive with O365 Identity Client Runtime Library (IDCRL) which advertises MSIE 6.0 
 
 
