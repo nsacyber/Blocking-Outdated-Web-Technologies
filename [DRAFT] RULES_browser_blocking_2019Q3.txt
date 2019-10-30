@@ -1,0 +1,16 @@
+#Rules for Blocking Browsers that are 2 or more years outdated
+
+<entry name="Outdated_Chrome">
+  <pattern>User\-Agent:(.*) Chrome\/(([1-9])|([1-5][0-9])|(6[0-1]))\.(.*)Safari\/([^\/]*\:)</pattern>
+</entry>
+<entry name="Outdated_Firefox">
+  <pattern>User\-Agent:(.*) Firefox\/(([1-9])|(([1-4][0-9]))|(5[0-5]))\.</pattern>
+</entry>
+<entry name="Outdated_InternetExplorer">
+  <pattern>User\-Agent:(.*) MSIE (([4-5])|([8-9])|10)\.</pattern>
+  <pattern>User\-Agent:(.*) Trident\/[3-6]\.</pattern>
+</entry>
+<entry name="Outdated_Opera">
+  <pattern>User\-Agent:(.*) Opera\/9\.(.*) Version\/1([0-2])\.</pattern>
+  <pattern>User\-Agent:(.*) OPR\/(([1-3][0-9])|(4[0-8]))\.</pattern>
+</entry>
