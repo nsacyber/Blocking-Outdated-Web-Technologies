@@ -20,7 +20,7 @@ function out ([string] $str, $display = $true) {
   if($display){ echo $str }
 }
 
-#Helper function to sum an array. Used for reporting statistics
+#Helper function to sum an array. Used for reporting statistics 
 function Get-Sum ($a, $b=@{}) {
     return (($a.Values | Measure-Object -Sum).Sum + ($b.Values | Measure-Object -Sum).Sum)
 }
